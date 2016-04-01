@@ -1,0 +1,145 @@
+<?php
+/*Plugin Name: R Job Board
+Description: Job Board listing in side bar
+Version: 0.1
+Author: Jensen
+Author URI: http://robertpauljensen.com
+License: GPLv2
+*/
+
+class DMNJobWidget extends WP_Widget {
+		
+	/**
+	 * Constructor
+	 *
+	 * @return void
+	 **/
+	function JBSBWidget() {
+		$widget_ops = array( 'classname' => 'JBSBWidget', 'description' => 'Displays Job Postings');
+		$this->WP_Widget( 'JBSBWidget', 'JBSBWidget', $widget_ops );
+		$this->alt_option_name = 'JBSBWidget';
+	}		
+		
+	/**
+	 * Displays the Widget in the front-end.
+	 * 
+	 * $args Display arguments including before_title, after_title, before_widget, and after_widget.
+	 * $instance The settings for the particular instance of the widget
+	 */
+	function widget( $args, $instance ) {
+		extract( $args );
+		extract( $instance );
+		
+    $pp   = !empty( $instance['num_stories']) ? $instance['num_stories'] : 5;
+
+    if ($instance['show_title']) {
+      $title  = !empty( $instance['title'] ) ? $instance[ 'title' ] : 'Jobs';
+      $header = 1 == $instance['show_graphic'] ? '<h2 class="widget-title bar">': '<h2 class="widget-title">' ; 
+      $header = $header . $title . '</h2>';
+    } else {
+      $title = '';
+      $header = 'show title not set';
+    }
+
+
+    $args = array( 'post_type' => 'job', 'posts_per_page' => $pp);
+    $loop = new WP_Query( $args );
+    $ctr = 0;
+
+    echo $before_widget;
+    echo '<section class="job-widget" >';
+
+    if ($header != '') echo $before_title . $header . $after_title;
+
+
+    while ( $loop->have_posts() ) : 
+      $loop->the_post();
+      $id = get_the_ID();
+      $ctr++
+      ?>
+
+      <article class="<?php echo $ctr % 2 ? 'odd-item': 'even-item'; ?>">
+        <header>
+          <h1 class="teaser-title"><a href="<?php the_permalink(); ?>" ><?php the_title(); ?></a></h1>
+        </header>
+        <p class="teaser-txt"><?php echo get_post_meta($id,'job_company', true); ?></p>
+        <p class="teaser-txt"><?php echo get_post_meta($id,'job_location', true); ?></p>
+      </article>
+    <?php endwhile; ?>
+
+    <p class="teaser-txt"><a href="/jobs">View All Jobs</a></p>
+    </section>
+    <?php        
+		echo $after_widget;
+	}
+		
+	/**
+	 * update the particular instant  
+	 * 
+	 * This function should check that $new_instance is set correctly.
+	 * The newly calculated value of $instance should be returned.
+	 * If "false" is returned, the instance won't be saved/updated.
+	 *
+	 * $new_instance New settings for this instance as input by the user via form()
+	 * $old_instance Old settings for this instance
+	 * Settings to save or bool false to cancel saving
+	 */
+	function update( $new_instance, $old_instance ) {
+		$instance = $old_instance;
+		$instance['title']        = strip_tags($new_instance['title']);
+    $instance['show_title']     = isset($new_instance['show_title']) ? 1: 0;
+    $instance['show_graphic'] = isset($new_instance['show_graphic']) ? 1: 0;
+		$instance['num_jobs']     = strip_tags($new_instance['num_jobs']);
+
+		return $instance;
+	}	
+		
+	/**
+	 * Creates the form for the widget in the back-end which includes the Title , adcode, image, alt
+	 * $instance Current settings
+	 */
+	function form($instance) {
+		$instance = wp_parse_args( ( array ) $instance, array( 'title'=>'Jobs', 'show_title' =>true,'show_graphic' => true, 'num_jobs' => 5 ) );
+		$title = esc_attr( $instance[ 'title' ] );
+		$title_id   = $this->get_field_id('title');
+		$title_name = $this->get_field_name('title');
+
+    $show_title_id   = $this->get_field_id('show_title');
+    $show_title_name = $this->get_field_name('show_title');
+
+    $graphic_id   = $this->get_field_id('show_graphic');
+    $graphic_name = $this->get_field_name('show_graphic');
+    
+    
+
+		
+		$num_jobs      = esc_attr( $instance[ 'num_jobs' ] );
+		$num_jobs_id   = $this->get_field_id('num_jobs');
+		$num_jobs_name = $this->get_field_name('num_jobs');
+
+		/**
+		 * Constructs title attributes  for use in form() field
+		 * @return string Name attribute for $field_name
+		 */
+		?>
+
+    <p>
+      <label for="<?php echo $title_id ?>">Title:</label>
+      <input class="widefat" id="<?php echo $title_id ?>" name="<?php echo $title_name ?>" type="text" value="<?php echo $title ?>" />
+    </p>
+    <p>
+      <label for="<?php echo $show_title_id ?>">Show the title :</label>
+      <input class="checkbox" type="checkbox" value="1" <?php checked($instance['show_title'], 1); ?> id="<?php echo $show_title_id ?>" name="<?php echo $show_title_name ?>" />
+    </p>
+	<p>
+	  <label for="<?php echo $num_jobs_id ?>">Number of Jobs to show:</label>		  
+	  <input id="<?php echo $num_jobs_id ?>" name="<?php echo $num_jobs_name ?>" type="text" value="<?php echo $num_jobs ?>" />
+	</p>
+        <?php
+				
+	}
+}// end class
+
+?>
+
+
